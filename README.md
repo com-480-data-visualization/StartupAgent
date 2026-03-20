@@ -4,69 +4,88 @@
 | -------------- | ------ |
 | Haodong Zheng  | 387661 |
 | Youliang Zhu   | 415773 |
-|                |        |
+| Yueyang Pan    | 350575 |
 
 [Milestone 1](#milestone-1) • [Milestone 2](#milestone-2) • [Milestone 3](#milestone-3)
+
+---
 
 ## Milestone 1 (20th March, 5pm)
 
 ### Dataset
 
-We construct a unified dataset of **100+ AI startups** across the United States, China, and Europe by triangulating multiple public sources: [Crunchbase](https://www.crunchbase.com/) (global funding data, academic API access), [Dealroom.co](https://dealroom.co/) (strong European coverage), [ITJuzi/IT桔子](https://www.itjuzi.com/) (Chinese startup ecosystem), and news sources (TechCrunch, 36Kr, Sifted) for enrichment. Each company record contains 20+ variables: name, region (US/CN/EU), country, city, geocoded coordinates, founding year, value chain layer (Infrastructure / Foundation Model / Middleware / Application / Developer Tools), sub-category, total funding (USD), latest valuation, funding round stage, estimated ARR, employee count, operational status, business model, key investors, moat type, and open-source strategy.
+We construct a unified dataset of **~200 companies** across the full AI value chain, spanning US, China, Europe, and Taiwan/Japan, organized into five layers (~40 each):
 
-**Data quality assessment:** The data is generally well-structured but presents three challenges. First, valuation opacity — many startups (especially Chinese ones) lack public valuation disclosures, so we use secondary estimates and flag confidence levels. Second, temporal misalignment — funding data arrives from different reporting dates; we normalize to the latest available point per company (cutoff: March 2026). Third, survivor bias — public databases over-represent funded, surviving companies; we deliberately include 10–15 failed or pivoted startups (e.g., Stability AI restructuring, 01.AI downsizing) to mitigate this.
+- **Layer 0 — Physical Infrastructure:** Power & thermal (Vertiv, Eaton), interconnects (Amphenol, Lumentum, Fabrinet), memory & storage (Micron, SK Hynix), PCB (TTM Technologies).
+- **Layer 1 — Compute & Silicon:** AI accelerators and ASICs (NVIDIA, AMD, Broadcom, Marvell, Cerebras, Groq).
+- **Layer 2 — AI Infrastructure Software:** Cloud, MLOps, data platforms (CoreWeave, Databricks, Scale AI).
+- **Layer 3 — Foundation Models & Middleware:** LLMs, agents, orchestration (OpenAI, Anthropic, DeepSeek, Mistral).
+- **Layer 4 — AI-Enabled Applications:** E-commerce, companionship, vertical SaaS, robotics (Perplexity, Waymo, Klarna).
 
-**Preprocessing** involves: deduplication across sources, currency normalization to USD using exchange rates at funding date, geocoding headquarters for map visualizations, and manual verification of outlier values. The final dataset is stored as structured JSON and CSV for flexibility in both D3.js and Python-based exploration. No heavy scraping or NLP is required — the primary effort is cross-source reconciliation and manual curation of Chinese-language sources.
+**Data sources:** Public companies (Layers 0–2) use **SEC EDGAR** (free XBRL API), **yfinance**, and **Financial Modeling Prep** for fundamentals, valuation metrics, and customer revenue breakdowns. Private companies (Layers 2–4) use **Crunchbase** (academic API), **Dealroom.co** (EU), and **ITJuzi** (China). Customer concentration is extracted from 10-K filings and investor press releases.
+
+**Data quality & preprocessing:** Public SEC data is audited and standardized — low preprocessing burden. Private data faces three challenges: (1) *valuation opacity* — undisclosed valuations flagged with confidence levels; (2) *temporal misalignment* — funding data normalized to March 2026 cutoff; (3) *source fragmentation* — deduplication across Crunchbase, Dealroom, and ITJuzi required. Additional steps: USD normalization at funding date, headquarters geocoding, and XBRL parsing for customer segments. We include 10–15 failed/pivoted companies (e.g., Stability AI, 01.AI) to mitigate survivor bias. Schema: shared universal fields (name, layer, region, founding year, status, revenue) extended by layer-specific fields (EV/EBITDA for L0; burn multiple for L3; ARR for L4). Stored as JSON and CSV; no scraping required.
+
+---
 
 ### Problematic
 
-In February 2026, global AI venture investment hit $189 billion — the largest single month ever — yet 83% flowed to just three companies. Meanwhile, China's DeepSeek matched GPT-4 at a fraction of the cost, and Europe's Mistral AI raised €1.7B as the continent's AI champion. These developments reveal a fragmented, rapidly evolving global landscape that is difficult to understand from any single data source or static report.
+Global AI capex exceeded $300B in 2025, yet the investment landscape remains opaque: hyperscaler spending floods infrastructure suppliers, VC billions concentrate in a handful of model-layer startups, and AI-enabled applications receive massive coverage despite generating real revenue. Job seekers targeting high-growth roles face the same gap — which companies are scaling, which are burning cash toward irrelevance?
 
-**Central question:** *How do the AI startup ecosystems of the US, China, and Europe differ in structure, strategy, and trajectory — and what do these differences reveal about where future innovation will emerge?*
+**Central question:** *Across the full AI value chain — from power infrastructure to consumer applications — where are the most compelling investment and career opportunities, and how do they differ by layers, geography and market access?*
 
-We develop an **interactive exploratory dashboard** addressing five axes:
+We build an **interactive investor-facing dashboard** organized around two market types (primary/secondary) and five value chain layers, addressing four axes:
 
-1. **Capital concentration** — How is funding distributed across value chain layers and geographies? Is "winner-take-all" universal or region-specific?
-2. **Ecosystem structure** — Do regions produce fundamentally different types of AI companies? (US: foundation models + infrastructure; China: model-layer concentration integrated into super-apps; Europe: regulation-aligned open-source)
-3. **Capital efficiency** — Do Chinese/European startups systematically achieve comparable outcomes with less capital?
-4. **Temporal dynamics** — How has startup creation shifted across layers from 2019–2026?
-5. **Failure patterns** — Where do AI startups fail, and does value chain position correlate with survival?
+1. **Capital flow by layer** — Where does AI capex land? Which layers are overcrowded or underinvested relative to the opportunity?
+2. **Layer-appropriate valuation** — Infrastructure trades on EV/EBITDA; model-layer startups on revenue multiples; applications on ARR growth. The dashboard applies the right lens per layer.
+3. **Customer concentration risk** — A per-company "customer mesh" (donut chart) reveals whether revenues are hyperscaler-dependent or diversified — a critical but undervisualized investment signal.
+4. **Capital efficiency & IPO pipeline** — Which private companies generate the most value per dollar raised, and which are approaching IPO readiness?
 
-**Target audience:** Aspiring AI entrepreneurs evaluating where to build; investors seeking structural cross-geographic comparison; policy researchers studying how regulation and compute access shape innovation. The design follows Shneiderman's mantra: *overview first, zoom and filter, then details-on-demand*.
+**Target audience:** Emerging fund managers and angel investors seeking structured cross-layer deal flow; high-skill job seekers evaluating growth and stability. Design follows Shneiderman's mantra: *overview first, zoom and filter, then details-on-demand*.
+
+---
 
 ### Exploratory Data Analysis
 
-Initial EDA on 36 core companies reveals several structural patterns:
+Initial EDA on 36 Layer 3–4 companies plus 20 representative Layer 0–2 public names reveals cross-layer and cross-regional structural patterns:
 
-**Regional capital concentration is extreme.** The US accounts for 87% of total valuation ($1,193B) and 84% of funding ($109.7B), but this is driven almost entirely by three mega-caps (OpenAI $500B, Anthropic $380B, xAI $200B). Excluding the top 3, the US average drops from $74.6B to $16.9B — still higher than China ($3.6B) and Europe ($4.2B), but by a far smaller margin. This concentration is itself a key visualization target.
+**Regional capital concentration is extreme.** The US accounts for 87% of Layer 3–4 valuation ($1,193B) and 84% of funding ($109.7B), driven by three mega-caps (OpenAI $500B, Anthropic $380B, xAI $200B). Excluding these, the US average falls from $74.6B to $16.9B — far closer to China ($3.6B) and Europe ($4.2B).
 
-**Value chain distributions differ sharply by region.** China's ecosystem is 70% Foundation Model companies (the "Hundred Model War" effect). The US is most diversified and uniquely dominates Infrastructure (Cerebras, Groq, Scale AI, Databricks) — a layer near-absent in CN/EU. Europe is carving a niche in Developer Tools (Lovable, Poolside).
+**Value chain distributions differ by region.** China is 70% Foundation Models ("Hundred Model War"). The US uniquely dominates Layers 0–2. Europe focuses on Developer Tools (Lovable) and open-source models (Mistral).
 
-**Capital efficiency varies systematically.** Measured as Valuation/Funding ratio: DeepSeek (CN) achieves 20.0x, Lovable (EU) 17.4x, OpenAI (US) 12.5x, Mistral (EU) 4.7x, SenseTime (CN) 1.1x. Chinese and European startups achieve comparable technical outcomes with 5–20x less capital.
+**Capital pools by layer.** Layer 0–1 public companies dominate market cap; Layer 3 absorbs most VC dollars; Layer 4 is most fragmented (median funding <$500M, multiples varying 20×).
 
-**Founding year analysis** shows 2022–2023 as the modal period (ChatGPT catalyst), but a structural shift: early startups are disproportionately model-layer; 2024+ startups skew toward specialized tools and vertical applications — suggesting ecosystem maturation from "build a model" to "build on models."
+**Valuation metric divergence.** Layer 0 hardware trades at 30–50× forward earnings; Layer 3 startups at 15–100× ARR. A single metric would misrank companies across layers, validating the layer-aware scorecard.
 
-**Open-source strategy** shows regional divergence: CN/EU startups release open-weight models far more than US peers, reflecting cost-advantage (China) vs. sovereignty/trust signaling (Europe) vs. revenue protection (US).
+**Customer concentration risk at Layers 0–1.** Fabrinet derives ~40% of revenue from one customer; Lumentum is weighted to two hyperscalers; Credo discloses Microsoft as dominant buyer. This motivates the customer mesh — a per-company revenue donut by buyer type (hyperscaler, telco, enterprise, diversified).
 
-We built a working React prototype (Recharts) with filterable overview, scatter plot, treemap, radar chart, and sortable table, validating feasibility.
+**Capital efficiency by region.** DeepSeek (CN) 20.0×; Lovable (EU) 17.4×; OpenAI (US) 12.5×; Mistral (EU) 4.7×; SenseTime (CN) 1.1×. Chinese and European startups achieve comparable outcomes with 5–20× less capital.
+
+**Cohort analysis.** 2022–2023 is the modal founding year (ChatGPT catalyst). Post-2024 startups skew toward Layer 4. Companies founded 2019–2021 with $100M+ ARR are entering the IPO window.
+
+**Open-source divergence.** China and Europe release open-weight models far more than US peers — a moat and trust-signaling difference that enriches each company's investment thesis card.
+
+---
 
 ### Related work
 
-**What others have done:** CB Insights' *State of AI Report* provides comprehensive annual funding surveys but as static PDFs. Stanford HAI's *AI Index* offers macro-level cross-country statistics but focuses on aggregate metrics, not company-level exploration. Dealroom.co covers European startups interactively but lacks cross-regional comparison with China. Matt Turck's *"AI Landscape"* (FirstMark Capital) is an influential annual infographic mapping the ecosystem — visually dense but entirely static with no filtering or drill-down. Crunchbase and PitchBook offer company-searchable databases but lack analytical framing or research-question-driven design.
+**What others have done:**
+Bloomberg and PitchBook provide institutional investment data but are paywalled, lack AI-specific cross-layer framing and growth model analysis. CB Insights' *State of AI* and Goldman Sachs' *AI Capex* notes offer strong macro analysis but as static PDFs — no filtering or company-level drill-down. SemiAnalysis delivers rigorous layer-by-layer infrastructure breakdowns in long-form text only. Matt Turck's *MAD Landscape* (FirstMark) maps the AI ecosystem visually but is a static infographic with no investment metrics. Lightspeed Venture Partners' sector maps cover AI applications but exclude hardware and infrastructure. Dealroom.co offers interactive European startup data but no cross-regional or cross-layer comparison. No existing tool unifies all five layers with investment-grade metrics in a single interactive interface.
 
-**Why our approach is original:** No existing visualization provides a **unified, cross-regional comparison** of US, China, and European AI startups at the company level with value-chain decomposition. The geographic fragmentation of data sources (Crunchbase for US, ITJuzi for China, Dealroom for EU) has historically prevented this integration. We fill the gap between static reports and neutral data browsers by providing an **analytical narrative delivered through interactive visualization**, with explicit research questions guiding design choices.
+**Why our approach is original:**
+Existing tools either have the data but not the narrative (Bloomberg, PitchBook), or the narrative but not interactivity (CB Insights, Goldman). We sit at the intersection: an *analytical story delivered through interactive visualization*, covering the full stack from atoms to applications. The customer mesh — per-company revenue concentration by buyer type — has no direct precedent in public investment tools. The layer-aware metric system (EV/EBITDA at L0, ARR multiples at L3) is also novel in a unified interface.
 
-**Visualization inspirations:** Gapminder (Hans Rosling) for animated bubble charts comparing entities over time; Mike Bostock's D3 Zoomable Treemap for hierarchical decomposition (Region → Layer → Company); *"Wealth Inequality in America"* for making extreme concentration viscerally legible; and the Pudding's data essays for narrative-driven interactive storytelling.
+**Visualization inspirations:**
+Gapminder (animated bubble charts); The Pudding (narrative data essays); *Wealth Inequality in America* (Politizane) for visceral concentration storytelling — directly applicable to the customer mesh; D3 Zoomable Treemap (Bostock) for Layer → Region → Company hierarchy; Financial Times' *Visual Vocabulary* for metric-to-chart discipline.
 
-This dataset has not been used in any prior coursework.
+This dataset has not been explored in any prior coursework.
 
+---
 
 ## Milestone 2 (2nd May, 5pm)
 
 **10% of the final grade**
 
-
 ## Milestone 3 (30th May, 5pm)
 
 **80% of the final grade**
-
